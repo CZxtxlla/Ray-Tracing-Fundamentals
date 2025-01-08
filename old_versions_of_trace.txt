@@ -1,0 +1,49 @@
+def trace(ray, objects):
+    """traces ray and returns colour of pixel"""
+    w = collide(ray, objects)
+    if w[0]:
+        if w[1].light_source:
+            return np.array([1.0, 1.0, 1.0], dtype=np.float64)
+        colour = w[1].colour
+        direction = uf.unit_vector(w[3].center - ray.at(w[2]))
+        new_ray = Ray(ray.at(w[2]), direction)
+        w = collide(new_ray, objects)
+        if w[0]:
+            #print(w[1].colour)
+            if w[1].light_source:
+                return colour
+            else:
+                return np.array([0.0, 0.0, 0.0], dtype=np.float64)
+        else:
+            return np.array([0, 1, 0]) #blue hits nothing
+    else:
+        return sky()
+    
+
+def multiple_bounce_trace(ray, objects):
+    """custom function for multiple bounces, probably not accurate but works"""
+    ret = np.array([0.0, 0.0, 0.0], dtype=np.float64)
+    throughput = np.array([1.0, 1.0, 1.0], dtype=np.float64)
+    depth = 100
+    w = collide(ray, objects)
+    if w[0]:
+        if w[1].light_source:
+            return w[1].colour
+        else:
+            colour = w[1].colour
+        for i in range(depth):
+            direction = uf.unit_vector(w[3].center - ray.at(w[2])) #direction to lightsource
+            new_ray = Ray(ray.at(w[2]), direction) #new ray to lightsource
+            w = collide(new_ray, objects)
+            if w[0]: #if new ray hits something
+                if w[1].light_source:
+                    return colour/(i+1)
+                else:
+                    normal = uf.unit_vector(ray.at(w[2]) - w[1].center)
+                    ray = Ray(ray.at(w[2]), uf.random_on_hemisphere2(normal))
+                    w = collide(ray, objects)
+            else:
+                return colour/(i+1) 
+        return np.array([0, 0, 0])
+    else:
+        return sky()
